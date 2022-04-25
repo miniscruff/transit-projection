@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title></title>
+<style>
+main {
+  display: flex;
+  flex-direction: column;
+  max-width: 800px;
+  margin: auto;
+}
+h1, h2 {
+  text-align: center;
+}
+.form {
+  display: grid;
+  grid-template-columns: 10rem 1fr
+}
+#trains {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-top: 1rem;
+}
+#lanes {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-top: 1rem;
+  border-top: yellow dashed;
+}
+.lane {
+  display: flex;
+  justify-content: space-evenly;
+  border-bottom: yellow dashed;
+  margin: 0.25rem 0;
+}
+.img {
+  display: block;
+  text-indent: -9999px;
+  width: 100px;
+  height: 50px;
+  background-repeat: no-repeat;
+}
+.img-flipped {
+  transform: rotateY(180deg) translate(5px)
+}
+.car {
+  background-image: url(car.svg);
+}
+.train {
+  background-image: url(train-car.svg);
+}
+.train-edges {
+  background-image: url(train-front.svg);
+}
+</style>
+</head>
+<body>
+  <main>
+    <h1>Capacity for fast transportation</h1>
+    <div class="form">
+      <label id="percent-display" for="percent"></label>
+      <input type="range" id="percent" name="percent" min="0" max="100">
+      <label id="people-display" for="people"></label>
+      <input type="range" id="people" name="people" min="1000" max="50000" step="1000">
+      <label id="peoplePerTrainCar-display" for="peoplePerTrainCar"></label>
+      <input type="range" id="peoplePerTrainCar" name="peoplePerTrainCar" min="50" max="500" step="10">
+      <label id="trainsPerHour-display" for="trainPerHour"></label>
+      <input type="range" id="trainsPerHour" name="trainsPerHour" min="1" max="30" step="1">
+      <label id="peoplePerCar-display" for="peoplePerCar"></label>
+      <input type="range" id="peoplePerCar" name="peoplePerCar" min="1" max="4" step="0.1">
+    </div>
+    <h2>Size of each train</h2>
+    <div id="trains">
+      <div class="img train-edges img-flipped"></div>
+      <div class="img train"></div>
+      <div class="img train-edges"></div>
+    </div>
+    <h2>Amount of car lanes</h2>
+    <div id="lanes">
+      <div class="lane">
+        <div class="img car"></div>
+        <div class="img car"></div>
+        <div class="img car"></div>
+        <div class="img car"></div>
+      </div>
+    </div>
+  </main>
+  <script>
+    const trains = document.querySelector('#trains');
+    const lanes = document.querySelector('#lanes');
+
+    /* Assumptions, all values are per hour */
+    const carsPerLane = 2200;
+
+    // holds all our data to calculate, starts with defaults
+    const data = {
+        percent: 50,
+        people: 10000,
+        peoplePerTrainCar: 200,
+        trainsPerHour: 10,
+        peoplePerCar: 1.6,
+    }
+
+    function handleSlider(dataVar, displaySuffix) {
+        const slider = document.querySelector(`#${dataVar}`);
+        const display = document.querySelector(`#${dataVar}-display`);
+        slider.addEventListener('change', event => {
+            display.innerText = event.target.value + displaySuffix;
+            data[dataVar] = Number.parseFloat(event.target.value);
+            update();
+        });
+        display.innerText = data[dataVar] + displaySuffix;
+        slider.value = data[dataVar];
+        display.dispatchEvent(new Event('change'));
+    }
+
+    function update() {
+        updateTrainDisplay(calculateTrainCarsNeeded());
+        updateCarDisplay(calculateLanesNeeded());
+    }
+
+    function calculateTrainCarsNeeded() {
+          const peopleInTransit = Math.ceil(data.percent / 100 * data.people);
+          const capacityPerHourPerCar = data.peoplePerTrainCar * data.trainsPerHour;
+          return Math.ceil(peopleInTransit / capacityPerHourPerCar);
+    }
+
+    function calculateLanesNeeded() {
+          const peopleInCars = Math.ceil((100 - data.percent) / 100 * data.people);
+          return Math.ceil(peopleInCars / data.peoplePerCar / carsPerLane);
+    }
+
+    function updateTrainDisplay(count) {
+        // visually speaking, less than 3 trains doesn't work
+        count = Math.max(count, 3);
+
+        while (trains.childElementCount < count) {
+            const copyNode = trains.children[1].cloneNode();
+            trains.insertBefore(copyNode, trains.children[trains.childElementCount-1]);
+        }
+
+        while (trains.childElementCount > count) {
+            trains.removeChild(trains.children[1]);
+        }
+    }
+
+    function updateCarDisplay(count) {
+        // always keep at least one lane for visuals
+        count = Math.max(count, 1);
+
+        while (lanes.childElementCount < count) {
+            const copyNode = lanes.children[0].cloneNode(true);
+            lanes.insertBefore(copyNode, lanes.children[lanes.childElementCount-1]);
+        }
+
+        while (lanes.childElementCount > count) {
+            lanes.removeChild(lanes.children[0]);
+        }
+    }
+
+    handleSlider("percent", "% use transit");
+    handleSlider("people", " people");
+    handleSlider("peoplePerTrainCar", " people per train car");
+    handleSlider("trainsPerHour", " trains per hour");
+    handleSlider("peoplePerCar", " people per car");
+    update();
+  </script>
+</body>
+</html>
