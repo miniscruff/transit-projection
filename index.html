@@ -123,7 +123,7 @@ nav {
     function handleSlider(dataVar, displaySuffix) {
         const slider = document.querySelector(`#${dataVar}`);
         const display = document.querySelector(`#${dataVar}-display`);
-        slider.addEventListener('change', event => {
+        slider.addEventListener('input', event => {
             display.innerText = event.target.value + displaySuffix;
             data[dataVar] = Number.parseFloat(event.target.value);
             update();
